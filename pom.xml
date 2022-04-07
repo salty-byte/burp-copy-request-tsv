@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>burp</groupId>
     <artifactId>CopyRequestTsv</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1-custom-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
         <!--  Gson: Java to Json conversion -->

@@ -45,7 +45,7 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 	private static final String TypeUrl         = "URL";
 	private static final String TypeCookie      = "Cookie";
 	private static final String TypeUnknown     = "UnknownType:";
-	private static final String Title           = "Copy Request Tsv";
+	private static final String Title           = "Copy Request Tsv Custom";
 	private static final String MenuItemName1   = "Copy Request Tsv (Full)";
 	private static final String MenuItemName2   = "Copy Request Tsv (Header)";
 	private static final String MenuItemName3   = "Copy Request Tsv (Get/POST/Cookie)";
@@ -227,10 +227,10 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 						sb.append(convertList2Tsv(getHeader(message), true));
 
 						// get + post + cookie パラメータを取得
-						sb.append(convertList2Tsv(getParams(message)));
+						sb.append(convertList2Tsv(getParams(message), true));
 
 						// json パラメータを取得
-						sb.append(convertList2Tsv(getJson(message)));
+						sb.append(convertList2Tsv(getJson(message), true));
 					}
 				}
 

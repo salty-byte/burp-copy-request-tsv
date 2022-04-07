@@ -8,5 +8,5 @@ forked from toubaru/burp-copy-request-tsv
 
 ```shell
 $ mvn install
-# created `./target/CopyRequestTsv-1.1-SNAPSHOT-jar-with-dependencies.jar`
+# created `./target/CopyRequestTsv-x.x-custom-SNAPSHOT-jar-with-dependencies.jar`
 ```
