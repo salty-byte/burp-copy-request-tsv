@@ -1,9 +1,12 @@
-# burp-copy-request-tsv
+# burp-copy-request-tsv拡張
 
-HTTPリクエストに使われてそうなパラメータをTSV形式でクリップボードにコピーする拡張機能です。
+HTTPリクエストに使われてそうなパラメータをTSV形式でクリップボードにコピーする拡張機能
 
-よければ使ってみてください！
+forked from toubaru/burp-copy-request-tsv
 
-詳細は下記URLにて記載しています。
+# Build
 
-http://qiita.com/toubaru/items/cf2fb3f76df2f2c95e02
+```shell
+$ mvn install
+# created `./target/CopyRequestTsv-1.1-SNAPSHOT-jar-with-dependencies.jar`
+```

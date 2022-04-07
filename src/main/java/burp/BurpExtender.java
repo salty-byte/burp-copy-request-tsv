@@ -50,7 +50,8 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 	private static final String MenuItemName2   = "Copy Request Tsv (Header)";
 	private static final String MenuItemName3   = "Copy Request Tsv (Get/POST/Cookie)";
 	private static final String MenuItemName4   = "Copy Request Tsv (Json)";
-	private static enum TsvColumns {URL,METHOD,TYPE,NAME,VALUE};
+	private static final String MenuItemName5   = "Copy Request Tsv (Comment+Full)";
+	private enum TsvColumns {URL,METHOD,TYPE,NAME,VALUE,COMMENT}
 
 	private static final Pattern patternControlCharacter = Pattern.compile("[\\x00-\\x1F\\x7F]");
 	private static final Pattern patternQuot = Pattern.compile(Quot);
@@ -104,13 +105,13 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 					if(message.getRequest().length > 0) {
 						
 						// メソッド + URL + Path + ヘッダ を取得
-						sb.append(cnvertList2Tsv(getHeader(message)));
+						sb.append(convertList2Tsv(getHeader(message)));
 						
 						// get + post + cookie パラメータを取得
-						sb.append(cnvertList2Tsv(getParams(message)));
+						sb.append(convertList2Tsv(getParams(message)));
 						
 						// json パラメータを取得
-						sb.append(cnvertList2Tsv(getJson(message)));
+						sb.append(convertList2Tsv(getJson(message)));
 					}
 				}
 				
@@ -138,7 +139,7 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 				for(IHttpRequestResponse message:messageList) {
 					if(message.getRequest().length > 0) {
 						// メソッド + URL + ヘッダ を取得
-						sb.append(cnvertList2Tsv(getHeader(message)));
+						sb.append(convertList2Tsv(getHeader(message)));
 					}
 				}
 				
@@ -166,7 +167,7 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 				for(IHttpRequestResponse message:messageList) {
 					if(message.getRequest().length > 0) {
 						// get + post + cookie パラメータを取得
-						sb.append(cnvertList2Tsv(getParams(message)));
+						sb.append(convertList2Tsv(getParams(message)));
 					}
 				}
 				
@@ -194,7 +195,7 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 				for(IHttpRequestResponse message:messageList) {
 					if(message.getRequest().length > 0) {
 						// json パラメータを取得
-						sb.append(cnvertList2Tsv(getJson(message)));
+						sb.append(convertList2Tsv(getJson(message)));
 					}
 				}
 				
@@ -206,8 +207,43 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 			}
 		});
 		menuList.add(menuItem4);
-		
-        return menuList;
+
+		JMenuItem menuItem5 = new JMenuItem();
+		menuItem5.setText(MenuItemName5);
+		menuItem5.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				IHttpRequestResponse[] messageList = contextMenuInvocation.getSelectedMessages();
+				StringBuilder sb = new StringBuilder();
+
+				if(messageList == null) {
+					return;
+				}
+
+				for(IHttpRequestResponse message:messageList) {
+					if(message.getRequest().length > 0) {
+
+						// Comment + メソッド + URL + Path + ヘッダ を取得
+						sb.append(convertList2Tsv(getHeader(message), true));
+
+						// get + post + cookie パラメータを取得
+						sb.append(convertList2Tsv(getParams(message)));
+
+						// json パラメータを取得
+						sb.append(convertList2Tsv(getJson(message)));
+					}
+				}
+
+				// clipboard
+				Toolkit toolkit = Toolkit.getDefaultToolkit();
+				Clipboard clipboard = toolkit.getSystemClipboard();
+				StringSelection selection = new StringSelection(sb.toString());
+				clipboard.setContents(selection, selection);
+			}
+		});
+		menuList.add(menuItem5);
+
+		return menuList;
 	}
 	
 	public String decode(String value) {
@@ -243,10 +279,20 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 		return result;
 	}
 
-	public String cnvertList2Tsv(List<Map<Integer, String>> tsvDataList) {
+	public String convertList2Tsv(List<Map<Integer, String>> tsvDataList) {
+		return convertList2Tsv(tsvDataList, false);
+	}
+
+	public String convertList2Tsv(List<Map<Integer, String>> tsvDataList, boolean hasComment) {
 		StringBuilder sb = new StringBuilder();
 		if(tsvDataList == null) return sb.toString();
 		for(Map<Integer, String> map:tsvDataList) {
+			if(hasComment) {
+				sb.append(Quot);
+				sb.append(convertTsvOutData(map.get(TsvColumns.COMMENT.ordinal())));
+				sb.append(Quot);
+				sb.append(Separator);
+			}
 			sb.append(Quot);
 			sb.append(convertTsvOutData(map.get(TsvColumns.METHOD.ordinal())));
 			sb.append(Quot);
@@ -270,9 +316,14 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 		}
 		return sb.toString();
 	}
-	
+
 	public Map<Integer, String> makeTsvList(String method,String url,String type,String name,String value) {
+		return makeTsvList(method, url, type, name, value, EMPTY);
+	}
+
+	public Map<Integer, String> makeTsvList(String method,String url,String type,String name,String value, String comment) {
 		Map<Integer, String> map = new HashMap<>();
+		map.put(TsvColumns.COMMENT.ordinal(), comment);
 		map.put(TsvColumns.METHOD.ordinal(), method);
 		map.put(TsvColumns.URL.ordinal(),    url);
 		map.put(TsvColumns.TYPE.ordinal(),   type);
@@ -280,16 +331,16 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory {
 		map.put(TsvColumns.VALUE.ordinal(),  value);
 		return map;
 	}
-	
+
 	public List<Map<Integer, String>> getHeader(IHttpRequestResponse message) {
 		List<Map<Integer, String>> result = new ArrayList<>();
 		IRequestInfo requestInfo = helpers.analyzeRequest(message.getHttpService(),message.getRequest());
-		
-		// Method + URL
+
+		// Method + URL (+Comment)
 		URL url = requestInfo.getUrl();
 		StringBuilder sbUrl = new StringBuilder();
 		sbUrl.append(url.getProtocol()).append(Scheme).append(url.getHost()).append(url.getPath());
-		result.add(makeTsvList(requestInfo.getMethod(),sbUrl.toString(),FillBlank,FillBlank,FillBlank));
+		result.add(makeTsvList(requestInfo.getMethod(),sbUrl.toString(),FillBlank,FillBlank,FillBlank,message.getComment()));
 		
 		// path
 		String[] paths = url.getPath().split(SplitUrlPath);
